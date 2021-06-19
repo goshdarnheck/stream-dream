@@ -1,0 +1,39 @@
+{
+  "name": "stream-dream",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/goshdarnheck/stream-dream.git"
+  },
+  "author": "Matthew Rapati",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/goshdarnheck/stream-dream/issues"
+  },
+  "homepage": "https://github.com/goshdarnheck/stream-dream#readme",
+  "devDependencies": {
+    "electron": "^12.0.11"
+  },
+  "dependencies": {
+    "iohook": "^0.9.3"
+  },
+  "iohook": {
+    "targets": [
+      "node-83",
+      "electron-87"
+    ],
+    "platforms": [
+      "win32",
+      "darwin"
+    ],
+    "arches": [
+      "x64",
+      "ia32"
+    ]
+  }
+}

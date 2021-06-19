@@ -1,0 +1,221 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Surf</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      :root {
+        font-size: 10px;
+        --background-color: #2ca8b4;
+        --outline-color: #3a2e1b;
+        --details-color: #fff7d5;
+      }
+
+      body {
+        background-color: var(--background-color);
+        color: var(--outline-color);
+        font-family: "Lucida Console";
+        height: 100vh;
+        margin: 0;
+        overflow: hidden;
+        position: relative;
+      }
+
+      #wrapper {
+        display: flex;
+        height: 100%;
+        padding: 0.8rem 1.6rem;
+        justify-content: space-between;
+      }
+
+      #keys {
+        display: flex;
+      }
+
+      #movement-keys {
+        column-gap: 0.2rem;
+        display: grid;
+        grid-template-areas: 
+          "j w c"
+          "a s d";
+        grid-template-columns: repeat(3, calc(50vh - 1rem));
+        grid-template-rows: repeat(2, calc(50% - 0.2rem));
+        margin-right: 1.6rem;
+        row-gap: 0.4rem;
+      }
+
+      #other-keys {
+        align-content: flex-end;
+        display: grid;
+        grid-template-columns: repeat(2, calc(50vh - 1rem));
+        grid-template-rows: calc(50% - 0.2rem);
+        column-gap: 0.2rem;
+      }
+
+      .key {
+        height: 100%;
+        position: relative;
+        width: 100%;
+      }
+
+      .key span {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+
+        background-color: var(--details-color);
+        border-radius: 5px;
+        font-weight: bold;
+        font-size: 1.6rem;
+        font-variant: small-caps;
+        text-align: center;
+        width: 100%;
+        height: 100%;
+        line-height: calc(100vh / 2 - 0.8rem);
+
+        box-shadow:
+          0 0.2rem 0 0.1rem var(--outline-color), 
+          0 -0.1rem 0 0 var(--outline-color);
+      }
+
+      .key.active span {
+        top: 0.2rem;
+        box-shadow:
+          0 0 0 0.1rem var(--outline-color);
+      }
+
+      #key-w {
+        grid-area: w;
+      }
+
+      #key-a {
+        grid-area: a;
+      }
+
+      #key-s {
+        grid-area: s;
+      }
+
+      #key-d {
+        grid-area: d;
+      }
+
+      #text {
+        align-content: center;
+        display: flex;
+        font-size: 1.6rem;
+      }
+
+      #status {
+        align-self: center;
+
+        box-shadow: 0 0 0 0.1rem var(--outline-color);
+
+        background-color: var(--details-color);
+        border-radius: 5px;
+        font-weight: bold;
+        font-size: 1.6rem;
+        font-variant: small-caps;
+        line-height: calc(100vh / 2 - 0.8rem);
+        padding: 0 1.6rem;
+        text-align: left;
+        width: 60rem;
+      }
+
+      #drag-handle {
+        -webkit-user-select: none;
+        -webkit-app-region: drag;
+        width: 10rem;
+      }
+
+      #drag-handle:hover {
+        background-color: rgba(255, 255, 255, 0.7);
+        border-radius: 0.4rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="wrapper">
+      <div id="keys">
+        <div id="movement-keys">
+          <div id="key-w" class="key"><span>W</span></div>
+          <div id="key-a" class="key"><span>A</span></div>
+          <div id="key-s" class="key"><span>S</span></div>
+          <div id="key-d" class="key"><span>D</span></div>
+        </div>
+        <div id="other-keys">
+          <div id="key-ctrl" class="key"><span>C</span></div>
+          <div id="key-jump" class="key"><span>J</span></div>
+        </div>
+      </div>
+      <div id="drag-handle"></div>
+      <div id="text">
+        <div id="status" contenteditable="true">Map: None</div>
+      </div>
+    </div>
+    <script>
+      const ipcRenderer = require('electron').ipcRenderer;
+      
+      ipcRenderer.on('globalkeydown', (event, message) => {
+        // console.log(message.keycode)
+        switch (message.keycode) {
+          case 17:
+            document.getElementById('key-w').classList.add('active');
+            break;
+          case 30:
+            document.getElementById('key-a').classList.add('active');
+            break;
+          case 31:
+            document.getElementById('key-s').classList.add('active');
+            break;
+          case 32:
+            document.getElementById('key-d').classList.add('active');
+            break;
+          case 29:
+            document.getElementById('key-ctrl').classList.add('active');
+            break;
+          case 57:
+            document.getElementById('key-jump').classList.add('active');
+            setTimeout(() => {
+              document.getElementById('key-jump').classList.remove('active');
+            }, 120)
+            break;
+        }
+      });
+
+      ipcRenderer.on('globalkeyup', (event, message) => {
+        switch (message.keycode) {
+          case 17:
+            document.getElementById('key-w').classList.remove('active');
+            break;
+          case 30:
+            document.getElementById('key-a').classList.remove('active');
+            break;
+          case 31:
+            document.getElementById('key-s').classList.remove('active');
+            break;
+          case 32:
+            document.getElementById('key-d').classList.remove('active');
+            break;
+          case 29:
+            document.getElementById('key-ctrl').classList.remove('active');
+            break;
+        }
+      });
+
+      ipcRenderer.on('globalwheel', (event, message) => {
+        if (message.rotation === -1) {
+          document.getElementById('key-jump').classList.add('active');
+          setTimeout(() => {
+            document.getElementById('key-jump').classList.remove('active');
+          }, 120)
+        }
+      })
+    </script>
+  </body>
+</html>
