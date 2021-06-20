@@ -1,13 +1,109 @@
 const electron = require('electron');
+const { session } = require('electron');
 const ioHook = require('iohook');
+var url = require('url');
+const SpotifyWebApi = require('spotify-web-api-node');
+const config = require('./config.json')
 
 const { app, BrowserWindow } = electron;
 
 app.disableHardwareAcceleration()
 
+const redirectUri = "https://localhost/callback"
+const filter = {
+  urls: [redirectUri + '*']
+};
+
+var spotifyApi = new SpotifyWebApi({
+  clientId: config.spotify.clientId,
+  clientSecret: config.spotify.clientSecret,
+  redirectUri: redirectUri
+});
+
 let win;
+let displaySpotifySong = true;
+let spotifyAuthCode = null;
+let pollId = null
+
+function pollCurrentTrack(delay) {
+  var getCurrentTrack = function() {
+    console.log("< Polling Song")
+
+    spotifyApi.getMyCurrentPlayingTrack()
+      .then(function(data) {
+        console.log('> Now playing: ', data.body.item.name);
+        win.webContents.send('currentTrack', data)
+        console.log("| Next poll in:", data.body.item.duration_ms - data.body.progress_ms + 1000)
+        pollId = setTimeout(getCurrentTrack, data.body.item.duration_ms - data.body.progress_ms + 1000);
+      }, function(err) {
+        console.log('Something went wrong!', err);
+        refreshSpotifyToken(function () {
+          getCurrentTrack();
+        })
+      });
+  }
+
+  pollId = setTimeout(getCurrentTrack, delay);
+}
+
+function refreshSpotifyToken(callback) {
+  console.log("< Refreshing Access Token")
+
+  spotifyApi.refreshAccessToken().then(
+    function(data) {
+      console.log('> The access token has been refreshed!');
+
+      // Save the access token so that it's used in future calls
+      spotifyApi.setAccessToken(data.body['access_token']);
+
+      // call that callback // code comment // todo: clean up comments
+      callback()
+    },
+    function(err) {
+      console.log('> Could not refresh access token', err);
+    }
+  );
+}
+
+function getSpotifyAccessAndRefreshTokens(code, callback) {
+  // Retrieve an access token and a refresh token
+  let tokenExpirationEpoch;
+  spotifyApi.authorizationCodeGrant(code).then(
+    function(data) {
+      console.log('The token expires in ' + data.body['expires_in']);
+      console.log('The access token is ' + data.body['access_token']);
+      console.log('The refresh token is ' + data.body['refresh_token']);
+
+      // Set the access token on the API object to use it in later calls
+      spotifyApi.setAccessToken(data.body['access_token']);
+      spotifyApi.setRefreshToken(data.body['refresh_token']);
+
+      // Save the amount of seconds until the access token expired
+      tokenExpirationEpoch =
+        new Date().getTime() / 1000 + data.body['expires_in'];
+      console.log(
+        'Retrieved token. It expires in ' +
+          Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
+          ' seconds!'
+        );
+
+      callback()
+    },
+    function(err) {
+      console.log('Something went wrong!', err);
+    }
+  );
+}
 
 function eventHandlerDown(event) {
+  const songChangeKeys = [57360, 57378, 57369]
+  
+  if (songChangeKeys.includes(event.keycode) && displaySpotifySong) {
+    console.log("< Skipped/Back/Pause/Play Song");
+    clearInterval(pollId);
+    pollCurrentTrack(1000);
+  }
+
   win.webContents.send('globalkeydown', event)
 }
 
@@ -43,6 +139,44 @@ app.on('ready', function () {
   win.loadURL(`file://${__dirname}/main.html`)
   // win.removeMenu()
   // win.webContents.setFrameRate(60)
+
+  if (displaySpotifySong) {
+    const authorizeURL = spotifyApi.createAuthorizeURL(['user-read-currently-playing'], 'stream-dreaming', true);
+    var authWindow = new BrowserWindow({
+      width: 800, 
+      height: 600, 
+      show: false, 
+      'node-integration': false
+    });
+    
+    authWindow.loadURL(authorizeURL);
+    authWindow.show();
+
+    // Reset the authWindow on close
+    authWindow.on(
+      'close',
+      function() {
+        authWindow = null;
+      },
+      false
+    );
+
+    session.defaultSession.webRequest.onBeforeRequest(filter, function (details, callback) {
+      const queryData = url.parse(details.url, true).query;
+      spotifyAuthCode = queryData.code;
+      getSpotifyAccessAndRefreshTokens(spotifyAuthCode, function () {
+        pollCurrentTrack(0)
+        authWindow.close();
+      });
+
+      // don't forget to let the request proceed
+      callback({
+        cancel: false
+      });
+    });
+
+    
+  }
 });
 
 app.on('before-quit', () => {
