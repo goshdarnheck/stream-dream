@@ -3,7 +3,10 @@
 <html>
   <head>
     <title>Surf</title>
+    <meta charset="UTF-8">
     <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link rel="stylesheet" type="text/css" href="css/keys.css">
+    <link rel="stylesheet" type="text/css" href="css/now-playing.css">
   </head>
   <body>
     <div id="wrapper">
@@ -20,12 +23,16 @@
         </div>
       </div>
       <div id="now-playing">
-        <div><img src="" id="album-art" style="display: none" /></div>
+        <div id="catjam">
+          <img src="images/catjam0-r.gif" />
+        </div>
         <div id="song-info" style="display: none">
           <div id="song-name"></div>
           <div id="artists-names"></div>
         </div>
-        <div><img src="images/catjam0.gif" id="stupid-gif" /></div>
+        <div>
+          <img src="" id="album-art" style="display: none" />
+        </div>
       </div>
     </div>
     <script>
@@ -86,10 +93,13 @@
         }
       })
 
+      const musicPlayingImage = 'images/catjam-r.gif'
+      const musicStoppedImage = 'images/catjam0-r.gif'
+
       const setNoSong = () => {
         document.getElementById('album-art').style.display = 'none';
         document.getElementById('song-info').style.display = 'none';
-        document.getElementById('stupid-gif').setAttribute('src', 'images/catjam0.gif');
+        document.querySelector('#catjam img').setAttribute('src', musicStoppedImage);
       }
 
       ipcRenderer.on('currentTrack', (event, message) => {
@@ -103,7 +113,7 @@
             document.getElementById('artists-names').innerHTML = artistsString
             document.getElementById('album-art').setAttribute('src', artUrl);
             document.getElementById('album-art').style.display = 'block';
-            document.getElementById('stupid-gif').setAttribute('src', 'images/catjam.gif');
+            document.querySelector('#catjam img').setAttribute('src', musicPlayingImage);
             document.getElementById('song-info').style.display = 'flex'
           } else {
             setNoSong()

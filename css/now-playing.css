@@ -1,0 +1,48 @@
+#now-playing {
+  align-items: center;
+  display: flex;
+}
+
+#catjam,
+#album-art {
+  height: 100vh;
+  width: 100vh;
+}
+
+#catjam img,
+#album-art img {
+  display: block;
+  height: 100%;
+}
+
+#song-info {
+  background-color: var(--outline-color);
+  color: var(--fur-color);
+  display: flex;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  flex-direction: column;
+  height: 100vh;
+  justify-content: center;
+  letter-spacing: 0.5rem;
+  padding: 0 2.4rem;
+  row-gap: 0.2rem;
+}
+
+#song-name {
+  font-size: 2.4rem;
+  font-weight: bold;
+  position: relative;
+  padding-left: 3.2rem;
+}
+
+#song-name:before {
+  content: '♫';
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+#artists-names {
+  font-size: 1.6rem;
+  padding-left: 3.2rem;
+}
