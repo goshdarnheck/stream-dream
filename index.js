@@ -1,12 +1,15 @@
 const electron = require('electron');
 const { session } = require('electron');
 const ioHook = require('iohook');
+const Store = require('electron-store');
 const SpotifyWebApi = require('spotify-web-api-node');
 const config = require('./config.json')
 
 const { app, BrowserWindow } = electron;
+const store = new Store();
 
 let win;
+let authWindow;
 let displaySpotifySong = true;
 let pollId = null
 let spotifyApi = new SpotifyWebApi({
@@ -107,6 +110,37 @@ function eventHandlerWheel(event) {
   win.webContents.send('globalwheel', event)
 }
 
+// TODO: should take callback
+function openSpotifyAuthWindow() {
+  const authorizeURL = spotifyApi.createAuthorizeURL(['user-read-currently-playing'], 'stream-dreaming', true);
+  
+  authWindow.loadURL(authorizeURL);
+  authWindow.show();
+
+  // Reset the authWindow on close
+  authWindow.on(
+    'close',
+    function() {
+      authWindow = null;
+    },
+    false
+  );
+}
+
+function handleSpotifyAuthResponseUrl(callBackUrl) {
+  const spotifyAuthCode = callBackUrl.searchParams.get('code')
+  if (spotifyAuthCode) {
+    console.log(`> Spotify auth code: ${spotifyAuthCode}`)
+    store.set('spotifyAuthCode', spotifyAuthCode);
+    getSpotifyAccessAndRefreshTokens(spotifyAuthCode, function () {
+      pollCurrentTrack(0)
+      authWindow.close();
+    });
+  } else {
+    console.log(`> Error: can't get Spotify auth code`)
+  }
+}
+
 app.on('ready', function () {
   ioHook.start(false);
   ioHook.on('keydown', eventHandlerDown);
@@ -128,54 +162,41 @@ app.on('ready', function () {
     disableHtmlFullscreenWindowResize: true
   });
 
+  win.setAlwaysOnTop(true, 'screen');
   win.loadURL(`file://${__dirname}/main.html`)
 
+  authWindow = new BrowserWindow({
+    width: 800, 
+    height: 600, 
+    show: false, 
+    'node-integration': false
+  });
+
   if (displaySpotifySong) {
-    const authorizeURL = spotifyApi.createAuthorizeURL(['user-read-currently-playing'], 'stream-dreaming', true);
-    var authWindow = new BrowserWindow({
-      width: 800, 
-      height: 600, 
-      show: false, 
-      'node-integration': false
-    });
-    
-    authWindow.loadURL(authorizeURL);
-    authWindow.show();
-
-    // Reset the authWindow on close
-    authWindow.on(
-      'close',
-      function() {
-        authWindow = null;
-      },
-      false
-    );
-
-    session.defaultSession.webRequest.onBeforeRequest(
-      {
-        urls: [config.spotify.callbackUri + '*']
-      },
-      (details, callback) => {
-        const callBackUrl = new URL(details.url);
-        const spotifyAuthCode = callBackUrl.searchParams.get('code')
-
-        if (spotifyAuthCode) {
-          console.log(`> Spotify auth code: ${spotifyAuthCode}`)
-          getSpotifyAccessAndRefreshTokens(spotifyAuthCode, function () {
-            pollCurrentTrack(0)
-            authWindow.close();
-          });
-        } else {
-          console.log(`> Error: can't get Spotify auth code`)
-        }
-
-        // don't forget to let the request proceed
-        callback({
-          cancel: false
-        });
-      }
-    );
+    openSpotifyAuthWindow()
   }
+
+  // console.log(store.get('spotifyAuthCode'))
+  // if spotifyAuthCode in store then
+    // try to call getSpotifyAccessAndRefreshTokens with a callback to start polling
+    // catch error, openSpotifyAuthWindow with callback to start polling 
+
+  session.defaultSession.webRequest.onBeforeRequest(
+    {
+      urls: [config.spotify.callbackUri + '*']
+    },
+    (details, callback) => {
+      const callBackUrl = new URL(details.url);
+
+      if (callBackUrl.pathname === '/spotifyAuthCodeCallback') {
+        handleSpotifyAuthResponseUrl(callBackUrl)
+      }
+
+      callback({
+        cancel: false
+      });
+    }
+  );
 });
 
 app.on('before-quit', () => {

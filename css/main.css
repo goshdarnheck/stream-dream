@@ -9,10 +9,11 @@
   --details-color: #fff7d5;
   --fur-color: #ffa621;
   --toque-color: #f428b4;
+  --chroma-key: #00ff00;
 }
 
 body {
-  background-color: var(--background-color);
+  background-color: var(--chroma-key);
   color: var(--outline-color);
   font-family: "Lucida Console";
   height: 100vh;
