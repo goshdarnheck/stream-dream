@@ -99,10 +99,16 @@ function getSpotifyAccessAndRefreshTokens(code, callback) {
 }
 
 function eventHandlerDown(event) {
-  const songChangeKeys = [57360, 57378, 57369]
-  
+  const songChangeKeys = [
+    57360, // Back (start of song, or previous song)
+    57378, // Play/Pause
+    57369, // Forward (next song)
+    57390, // Volume Down
+    57392, // Volume Up
+  ]
+
   if (songChangeKeys.includes(event.keycode) && displaySpotifySong) {
-    console.log("< Skipped/Back/Pause/Play Song");
+    console.log("< Skipped/Back/Pause/Play Song or Volume Change");
     clearInterval(pollId);
     pollCurrentTrack(1000);
   }

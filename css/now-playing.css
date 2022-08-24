@@ -20,22 +20,24 @@
   color: var(--details-color);
   display: flex;
   font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+  font-weight: bold;
   flex-direction: column;
   height: 100vh;
   justify-content: center;
   letter-spacing: 0.2rem;
-  padding: 0 2.4rem;
+  padding: 0 1.6rem;
   row-gap: 0.2rem;
   text-shadow: 1px 1px 0 var(--outline-color);
 }
 
 #song-name {
   font-size: 2.4rem;
-  font-weight: bold;
 }
 
 #artists-names {
   font-size: 1.6rem;
+  font-style: italic;
+  font-weight: 500;
   position: relative;
-  top: -0.3rem;
+  top: -0.6rem;
 }
